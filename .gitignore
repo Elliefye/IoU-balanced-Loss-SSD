@@ -1,0 +1,9 @@
+.idea/
+Dataset_lim/
+tensorboard/
+trained_models/
+venv/
+annotations.csv
+annotations_test.csv
+img_locations.txt
+img_locations_test.txt
