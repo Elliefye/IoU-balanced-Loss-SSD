@@ -4,7 +4,7 @@ from model.utils import Encoder
 
 
 class SimpleTransformer(object):
-    def __init__(self, dboxes, eval=True):
+    def __init__(self, dboxes, eval=False):
         self.eval = eval
         self.size = (300, 300)  # only support 300x300 ssd
         self.dboxes = dboxes
@@ -23,8 +23,8 @@ class SimpleTransformer(object):
             self.normalize
         ])
 
-    def __call__(self, img, bbox=None, label=None, max_num=200):
-        if not self.eval:
+    def __call__(self, img, bbox=None, label=None, max_num=100):
+        if self.eval:
             bbox_out = torch.zeros(max_num, 4)
             label_out = torch.zeros(max_num, dtype=torch.long)
             bbox_out[:bbox.size(0), :] = bbox

@@ -7,7 +7,7 @@ from torch.optim.lr_scheduler import MultiStepLR
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from model.ssd import SSD, ResNet
+from model.ssd import SSD
 from model.utils import generate_dboxes, Encoder
 from model.transform import SimpleTransformer
 from model.loss import Loss
@@ -41,8 +41,10 @@ def get_args():
 
 def main(opt):
     if torch.cuda.is_available():
-        torch.distributed.init_process_group(backend='nccl', init_method='env://')
-        num_gpus = torch.distributed.get_world_size()
+        print('found cuda')
+        # torch.distributed.init_process_group(backend='nccl', init_method='env://')
+        # num_gpus = torch.distributed.get_world_size()
+        num_gpus = 1
         torch.cuda.manual_seed(123)
     else:
         torch.manual_seed(123)
@@ -55,7 +57,7 @@ def main(opt):
                     "collate_fn": collate_fn}
 
     test_params = {"batch_size": opt.batch_size * num_gpus,
-                   "shuffle": False,
+                   "shuffle": True,
                    "drop_last": False,
                    "num_workers": opt.num_workers,
                    "collate_fn": collate_fn}
@@ -64,8 +66,8 @@ def main(opt):
     model = SSD()
     train_set = OIDataset(SimpleTransformer(dboxes))
     train_loader = DataLoader(train_set, **train_params)
-    # test_set = OIDataset(opt.data_path, 2017, "val", SimpleTransformer(dboxes, eval=True))
-    # test_loader = DataLoader(test_set, **test_params)
+    test_set = OIDataset(SimpleTransformer(dboxes, eval=True), train=False)
+    test_loader = DataLoader(test_set, **test_params)
 
     encoder = Encoder(dboxes)
 
@@ -99,16 +101,13 @@ def main(opt):
         model.module.load_state_dict(checkpoint["model_state_dict"])
         scheduler.load_state_dict(checkpoint["scheduler"])
         optimizer.load_state_dict(checkpoint["optimizer"])
+        evaluate(model, test_loader, checkpoint["epoch"], writer, encoder, opt.nms_threshold)
     else:
         first_epoch = 0
 
     for epoch in range(first_epoch, opt.epochs):
-        checkpoint = {"epoch": epoch,
-                      "model_state_dict": model.module.state_dict(),
-                      "optimizer": optimizer.state_dict(),
-                      "scheduler": scheduler.state_dict()}
         train(model, train_loader, epoch, writer, criterion, optimizer, scheduler)
-        # evaluate(model, test_loader, epoch, writer, encoder, opt.nms_threshold)
+        evaluate(model, test_loader, epoch, writer, encoder, opt.nms_threshold)
 
         checkpoint = {"epoch": epoch,
                       "model_state_dict": model.module.state_dict(),

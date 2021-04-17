@@ -1,7 +1,9 @@
 .idea/
+model/__pycache__/
 Dataset_lim/
 tensorboard/
 trained_models/
+predictions/
 venv/
 annotations.csv
 annotations_test.csv
