@@ -1,12 +1,12 @@
 import csv
 import os.path
 
-annotation_file = 'Dataset_lim/boxes/test-annotations-bbox.csv'
-base_path = 'Dataset_lim/test/'
+annotation_file = 'Dataset_lim/boxes/oidv6-train-annotations-bbox.csv'
+base_path = 'Dataset_lim/train/'
 
 classes = ['Knife', 'Horse', 'Human body']
 class_labels = {'/m/04ctx': 'Knife', '/m/03k3r': 'Horse', '/m/02p0tk3': 'Human body'}
-class_ids = {'Knife': 0, 'Horse': 1, 'Human body': 2}
+class_ids = {'Knife': 1, 'Horse': 2, 'Human body': 3}
 
 annotations = []
 locations = []
@@ -27,7 +27,7 @@ with open(annotation_file) as f:
         img_id = line[0]
         img_class = line[2]
         # one bbox per image (this will make the model worse but less complicated)
-        if img_class in class_labels and not in_annotations(img_id):
+        if img_class in class_labels:  # and not in_annotations(img_id):
             img_class = class_labels[img_class]
             path_to_file = base_path + img_class.lower().replace(' ', '_') + '/' + img_id + '.jpg'
             if os.path.isfile(path_to_file):
@@ -43,11 +43,11 @@ with open(annotation_file) as f:
                 #print(path_to_file)
                 #print(annotations[img_id])
 
-with open('img_locations_test.txt', 'w') as loc_file:
+with open('img_locations1.txt', 'w') as loc_file:
     for line in locations:
         loc_file.write(line + '\n')
 
-with open('annotations_test.csv', 'w', newline='') as ann_file:
+with open('annotations1.csv', 'w', newline='') as ann_file:
     writer = csv.DictWriter(ann_file, fieldnames=['imgid', 'xmin', 'ymin', 'xmax', 'ymax', 'class'])
     writer.writeheader()
 

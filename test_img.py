@@ -1,9 +1,7 @@
 import numpy as np
-import argparse
 import torch
 import os
 
-import model.eval
 from model.transform import SimpleTransformer
 import cv2
 from PIL import Image
@@ -11,12 +9,24 @@ from PIL import Image
 from model.utils import generate_dboxes, Encoder, colors
 from model.ssd import SSD
 
-classes = model.eval.labels
-input_folder = 'Dataset_lim/validation/horse/'
+classes = ['Background', 'Knife', 'Horse', 'Human']
+input_folder = 'Dataset_lim/validation/human_body/'
 cls_threshold = 0.3
 nms_threshold = 0.5
-model_path = 'trained_models/SSD.pth'
+model_path = 'trained_models/19.pth'
 output_path = 'predictions/'
+
+
+def ensure_legal(xmin, ymin, xmax, ymax, width, height):
+    if xmin < 0:
+        xmin = 0
+    if ymin < 0:
+        ymin = 0
+    if xmax > width:
+        xmax = width
+    if ymax > height:
+        ymax = height
+    return xmin, ymin, xmax, ymax
 
 
 def test_one(path):
@@ -52,6 +62,7 @@ def test_one(path):
                 category = classes[lb]
                 color = colors[lb]
                 xmin, ymin, xmax, ymax = box
+                xmin, ymin, xmax, ymax = ensure_legal(xmin, ymin, xmax, ymax, width, height)
                 cv2.rectangle(output_img, (xmin, ymin), (xmax, ymax), color, 2)
                 text_size = cv2.getTextSize(category + " : %.2f" % pr, cv2.FONT_HERSHEY_PLAIN, 1, 1)[0]
                 cv2.rectangle(output_img, (xmin, ymin), (xmin + text_size[0] + 3, ymin + text_size[1] + 4), color,

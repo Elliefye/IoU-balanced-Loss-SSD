@@ -56,11 +56,14 @@ class OIDataset(Dataset):
                     image = Image.open(path_to_img).convert("RGB")
 
         if image is None:
-            return None, None
+            return None, None, None, None
 
         df = pd.read_csv(annotations_path)
         line = df.loc[df['imgid'] == self._get_img_name(path_to_img)].to_numpy()
-        label_id = torch.tensor([line[0][5] + 1])  # 1 2 3 instead of 0 1 2 (0 is background in coco)
+        # print(line)
+        labels = []
+        bboxes = []
+        label_id = torch.tensor([line[0][5] + 1])  # 1 2 3 (0 is background in coco)
         bbox = torch.tensor([[line[0][1], line[0][2], line[0][3], line[0][4]]])
         if self.transform is not None:
             image, bbox, label_id = self.transform(image, bbox, label_id)

@@ -41,7 +41,7 @@ def get_args():
 
 def main(opt):
     if torch.cuda.is_available():
-        print('found cuda')
+        print('Will compute using CUDA')
         # torch.distributed.init_process_group(backend='nccl', init_method='env://')
         # num_gpus = torch.distributed.get_world_size()
         num_gpus = 1
@@ -101,13 +101,13 @@ def main(opt):
         model.module.load_state_dict(checkpoint["model_state_dict"])
         scheduler.load_state_dict(checkpoint["scheduler"])
         optimizer.load_state_dict(checkpoint["optimizer"])
-        evaluate(model, test_loader, checkpoint["epoch"], writer, encoder, opt.nms_threshold)
+        # evaluate(model, test_loader, encoder, opt.nms_threshold)
     else:
         first_epoch = 0
 
     for epoch in range(first_epoch, opt.epochs):
         train(model, train_loader, epoch, writer, criterion, optimizer, scheduler)
-        evaluate(model, test_loader, epoch, writer, encoder, opt.nms_threshold)
+        evaluate(model, test_loader, encoder, opt.nms_threshold)
 
         checkpoint = {"epoch": epoch,
                       "model_state_dict": model.module.state_dict(),

@@ -7,51 +7,6 @@ import torch
 labels = ['Background', 'Knife', 'Horse', 'Human body']
 
 
-def get_iou(bb1, bb2):
-    """
-    Calculate the Intersection over Union (IoU) of two bounding boxes.
-
-    Parameters
-    ----------
-    bb1 : dict
-        Keys: {'x1', 'x2', 'y1', 'y2'}
-        The (x1, y1) position is at the top left corner,
-        the (x2, y2) position is at the bottom right corner
-    bb2 : dict
-        Keys: {'x1', 'x2', 'y1', 'y2'}
-        The (x, y) position is at the top left corner,
-        the (x2, y2) position is at the bottom right corner
-
-    Returns
-    -------
-    float
-        in [0, 1]
-    """
-    # determine the coordinates of the intersection rectangle
-    x_left = max(bb1[0], bb2[0])
-    y_top = max(bb1[1], bb2[1])
-    x_right = min(bb1[2], bb2[2])
-    y_bottom = min(bb1[3], bb2[3])
-
-    if x_right < x_left or y_bottom < y_top:
-        return 0.0
-
-    # The intersection of two axis-aligned bounding boxes is always an
-    # axis-aligned bounding box
-    intersection_area = (x_right - x_left) * (y_bottom - y_top)
-
-    # compute the area of both AABBs
-    bb1_area = (bb1[2] - bb1[0]) * (bb1[3] - bb1[1])
-    bb2_area = (bb2[2] - bb2[0]) * (bb2[3] - bb2[1])
-
-    # compute the intersection over union by taking the intersection
-    # area and dividing it by the sum of prediction + ground-truth
-    # areas - the interesection area
-    iou = intersection_area / float(bb1_area + bb2_area - intersection_area)
-    assert iou >= 0.0
-    assert iou <= 1.0
-    return iou
-
 def compute_overlap(a, b):
     """
     Parameters
@@ -129,8 +84,6 @@ def evaluate_model(all_detections, all_annotations, iou_threshold=0.5):
             num_annotations += len(annotations)
             detected_annotations = []
 
-            # print('class: ', label, 'image no: ', i, annotations, detections)
-
             for d in detections:
                 if len(annotations) == 0:
                     false_positives = np.append(false_positives, 1)
@@ -138,12 +91,8 @@ def evaluate_model(all_detections, all_annotations, iou_threshold=0.5):
                     continue
 
                 overlaps = compute_overlap(np.expand_dims(d,  axis=0), annotations)
-                # overlaps = get_iou(d, annotations[0])
                 assigned_annotation = np.argmax(overlaps, axis=1)
-                # assigned_annotation = np.argmax(overlaps, axis=0)
                 max_overlap = overlaps[0, assigned_annotation]
-                # max_overlap = get_iou(d, annotations[0])
-                # print(max_overlap)
 
                 if max_overlap >= iou_threshold and assigned_annotation not in detected_annotations:
                     false_positives = np.append(false_positives, 0)
@@ -159,6 +108,7 @@ def evaluate_model(all_detections, all_annotations, iou_threshold=0.5):
             continue
 
         # sort by score
+        # indices = np.argsort(-scores)
         indices = np.argsort(-scores)
         false_positives = false_positives[indices]
         true_positives = true_positives[indices]
@@ -185,7 +135,8 @@ def evaluate_model(all_detections, all_annotations, iou_threshold=0.5):
     for label in range(1, 4):
         label_name = labels[label]
         if not label_name.isnumeric():
-            print('{}: {}'.format(label_name, average_precisions[label][0]))
+            print(label_name)
+            print("AP: " + str(average_precisions[label][0]))
             precision, recall = p_r[label]
             print("Precision: ", precision[-1] if len(precision) > 0 else 0)
             print("Recall: ", recall[-1] if len(recall) > 0 else 0)
