@@ -13,14 +13,14 @@ class Encoder(object):
     """
         author: Viet Nguyen <nhviet1009@gmail.com>
         Inspired by https://github.com/kuangliu/pytorch-src
-        Transform between (bboxes, lables) <-> SSD output
+        Transform between (bboxes, labels) <-> SSD output
         dboxes: default boxes in size 8732 x 4,
             encoder: input ltrb format, output xywh format
             decoder: input xywh format, output ltrb format
         encode:
             input  : bboxes_in (Tensor nboxes x 4), labels_in (Tensor nboxes)
             output : bboxes_out (Tensor 8732 x 4), labels_out (Tensor 8732)
-            criteria : IoU threshold of bboexes
+            criteria : IoU threshold of bboxes
         decode:
             input  : bboxes_in (Tensor 8732 x 4), scores_in (Tensor 8732 x nitems)
             output : bboxes_out (Tensor nboxes x 4), labels_out (Tensor nboxes)

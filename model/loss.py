@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from model.utils import Encoder
+from model.utils import Encoder, generate_dboxes
 
 
 class SigmoidDRLoss(nn.Module):
@@ -77,7 +77,20 @@ def compute_iou(a, b):
     return intersection / ua
 
 
-def find_weights(ploc, gloc, lam=1., w=2):
+def prepare_data(ploc, gloc, plabel):
+    encoder = Encoder(generate_dboxes())
+    p = ploc.detach().cpu().float()
+    pl = plabel.detach().cpu().float()
+    g = gloc.detach().cpu().float()
+
+    p, _ = encoder.scale_back_batch(p, pl)
+    g, _ = encoder.scale_back_batch(g, pl)
+
+    return p, g
+
+
+def find_weights(ploc, gloc, lam=1., w=0.01):
+    """finds iou weights for input type Nx8732x4 of ltrb bbox format"""
     p = ploc.detach().cpu().numpy()
     g = gloc.detach().cpu().numpy()
 
@@ -85,19 +98,15 @@ def find_weights(ploc, gloc, lam=1., w=2):
 
     for j in range(ploc.shape[0]):  # batch
         clweights = []
-        gbboxes = []
-        for i in range(gloc.shape[1]):
-            gbboxes.append(np.array([g[j][0][i], g[j][1][i], g[j][2][i], g[j][3][i]]))
-        gbboxes = np.array(gbboxes)
-        for i in range(ploc.shape[2]):
-            pbbox = np.array([[p[j][0][i], p[j][1][i], p[j][2][i], p[j][3][i]]])
+        gbboxes = np.array(g[j])
+        for i in range(ploc.shape[1]):
+            pbbox = np.array([p[j][i]])
             if pbbox[0][0] < pbbox[0][2] and pbbox[0][1] < pbbox[0][3]:
                 clweights.append(w * np.power(compute_iou(pbbox, gbboxes).sum(), lam))
             else:
                 clweights.append(0.0)
         weights.append(clweights)
     return torch.tensor(weights)
-
 
 
 class Loss(nn.Module):
@@ -137,21 +146,18 @@ class Loss(nn.Module):
 
         # sum on four coordinates, and mask
         sl1 = self.sl1_loss(ploc, vec_gd).sum(dim=1)
-        sl2 = torch.clone(sl1)
 
         # hard negative mining
         con = self.con_loss(plabel, glabel)
         # print(con)
 
         if self.use_weighted_iou:
-            weights = find_weights(ploc, gloc)
-            # print(weights[weights > 0])
-            sl1 *= sl1/(sl1 + weights.cuda())
-            # con *= con/(con + weights.cuda())
-            # print(con)
+            pl, gl = prepare_data(ploc, gloc, plabel)
+            weights = find_weights(pl, gl)
+            w = sl1/(sl1.clone() + weights.cuda())
+            sl1 = w * sl1
 
         sl1 = (mask.float() * sl1).sum(dim=1)
-        sl2 = (mask.float() * sl2).sum(dim=1)
 
         # postive mask will never selected
         con_neg = con.clone()
@@ -170,12 +176,5 @@ class Loss(nn.Module):
         num_mask = (pos_num > 0).float()
         pos_num = pos_num.float().clamp(min=1e-6)
         ret = (total_loss * num_mask / pos_num).mean(dim=0)
-        print(ret)
 
-        total_loss = sl2 + closs
-        num_mask = (pos_num > 0).float()
-        pos_num = pos_num.float().clamp(min=1e-6)
-        ret = (total_loss * num_mask / pos_num).mean(dim=0)
-        print(ret)
-        # sys.exit()
         return ret

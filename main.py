@@ -3,6 +3,7 @@ from model.utils import generate_dboxes, Encoder
 from model.transform import SimpleTransformer
 
 
-dboxes = generate_dboxes()
-dataset = d.OIDataset(SimpleTransformer(dboxes))
-print(dataset[0])
+# dboxes = generate_dboxes()
+# dataset = d.OIDataset(SimpleTransformer(dboxes))
+# print(dataset[0])
+print((325%6) + 1)
