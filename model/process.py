@@ -64,8 +64,9 @@ def evaluate(model, test_loader, encoder, nms_threshold):
                 loc, label, prob = [r.cpu().numpy() for r in result]
                 for loc_, label_, prob_ in zip(loc, label, prob):
                     # imgid, xmin, ymin, xmax, ymax, prob, label
-                    detections_loc.append([img_id[idx], round(loc_[0] * 300), round(loc_[1] * 300), round(loc_[2] * 300),
-                                       round(loc_[3] * 300), float(prob_), int(label_)])
+                    detections_loc.append(
+                        [img_id[idx], round(loc_[0] * 300), round(loc_[1] * 300), round(loc_[2] * 300),
+                         round(loc_[3] * 300), float(prob_), int(label_)])
                 detections.append(detections_loc)
 
         if nbatch >= 50:

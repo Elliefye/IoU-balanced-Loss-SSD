@@ -32,9 +32,6 @@ def get_args():
     parser.add_argument("--nms-threshold", type=float, default=0.5)
     parser.add_argument("--num-workers", type=int, default=4)
 
-    parser.add_argument('--local_rank', default=0, type=int,
-                        help='Used for multi-process training. Can either be manually set ' +
-                             'or automatically set by using \'python -m multiproc\'.')
     args = parser.parse_args()
     return args
 
