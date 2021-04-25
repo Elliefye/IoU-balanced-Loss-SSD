@@ -13,7 +13,7 @@ classes = ['Background', 'Knife', 'Horse', 'Human']
 input_folder = 'Dataset_lim/validation/human_body/'
 cls_threshold = 0.3
 nms_threshold = 0.5
-model_path = 'trained_models/19.pth'
+model_path = 'trained_models/SSD.pth'
 output_path = 'predictions/'
 
 

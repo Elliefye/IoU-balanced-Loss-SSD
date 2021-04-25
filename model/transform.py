@@ -15,6 +15,7 @@ class RandomHorizontalFlip(object):
             return img.transpose(Image.FLIP_LEFT_RIGHT), bboxes
         return img, bboxes
 
+
 class SimpleTransformer(object):
     def __init__(self, dboxes, eval=False):
         self.eval = eval
@@ -36,16 +37,16 @@ class SimpleTransformer(object):
             self.normalize
         ])
 
-    def __call__(self, img, bbox=None, label=None, max_num=100):
+    def __call__(self, img, bboxes=None, labels=None, max_num=100):
         if self.eval:
             bbox_out = torch.zeros(max_num, 4)
             label_out = torch.zeros(max_num, dtype=torch.long)
-            bbox_out[:bbox.size(0), :] = bbox
-            label_out[:label.size(0)] = label
+            bbox_out[:bboxes.size(0), :] = bboxes
+            label_out[:labels.size(0)] = labels
             return self.trans_eval(img), bbox_out, label_out
 
-        img, bbox = self.hflip(img, bbox)
+        img, bboxes = self.hflip(img, bboxes)
         img = self.img_trans(img).contiguous()
-        bbox, label = self.encoder.encode(bbox, label)
+        bboxes, labels = self.encoder.encode(bboxes, labels)
 
-        return img, bbox, label
+        return img, bboxes, labels
